@@ -1,23 +1,74 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 import re
+import shutil
 
-chrome_options = Options()
-chrome_options.add_argument("--headless")
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+    from webdriver_manager.chrome import ChromeDriverManager
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
 
-# Set the path to your ChromeDriver executable
-chrome_driver_path = r'C:\Users\chatu\OneDrive\Desktop\J.A.R.V.I.S\DATA\chromedriver.exe'
+# ─────────────────────────────────────────────
+#  LAZY DRIVER INIT
+#  Only create the driver when first needed,
+#  not at module import time (avoids crash on import).
+# ─────────────────────────────────────────────
+_driver = None
 
-chrome_service = Service(chrome_driver_path)
-driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+def _get_driver():
+    """Lazily initialize and return a headless Chrome WebDriver."""
+    global _driver
+    if _driver is not None:
+        return _driver
 
-# Open Google in the browser
-driver.get("https://www.google.com")
+    if not SELENIUM_AVAILABLE:
+        print("[SEARCH] Selenium is not installed. Google search disabled.")
+        return None
+
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    # Auto-detect Chrome/Chromium binary on Linux
+    from NetHyTechSTT.listen import _find_chrome_binary
+    binary = _find_chrome_binary()
+    if binary:
+        chrome_options.binary_location = binary
+
+    # Try webdriver_manager first, then system chromedriver
+    try:
+        service = Service(ChromeDriverManager().install())
+        _driver = webdriver.Chrome(service=service, options=chrome_options)
+    except Exception:
+        chromedriver_path = shutil.which("chromedriver")
+        if chromedriver_path:
+            try:
+                service = Service(executable_path=chromedriver_path)
+                _driver = webdriver.Chrome(service=service, options=chrome_options)
+            except Exception as e:
+                print(f"[SEARCH] Failed to init WebDriver: {e}")
+                return None
+        else:
+            try:
+                _driver = webdriver.Chrome(options=chrome_options)
+            except Exception as e:
+                print(f"[SEARCH] All WebDriver attempts failed: {e}")
+                return None
+
+    _driver.get("https://www.google.com")
+    return _driver
+
 
 def search_brain(text):
+    driver = _get_driver()
+    if driver is None:
+        return "Search is unavailable — Chrome/Chromium not found."
+
     try:
         # Find the search box using its name attribute value
         search_box = driver.find_element("name", "q")

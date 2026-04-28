@@ -8,10 +8,18 @@ except ImportError:
 
 try:
     from openai import OpenAI
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        client = OpenAI(api_key=api_key)
+    else:
+        client = None
+        print("[GPT] No OPENAI_API_KEY set. GPT cloud fallback disabled (using Ollama only).")
 except ImportError:
     client = None
-    print("Warning: openai module not found. AI capabilities will be limited.")
+    print("[GPT] openai module not found. AI capabilities will be limited.")
+except Exception as e:
+    client = None
+    print(f"[GPT] Failed to initialize OpenAI client: {e}")
 
 def ask_gpt(user_input):
     if not client:

@@ -1,9 +1,15 @@
 import os
+import platform
 import subprocess
 from Brain.personality import jarvis_speak
 
-# Map user-friendly names to process image names
-PROCESS_MAP = {
+# ─────────────────────────────────────────────
+#  CROSS-PLATFORM PROCESS MAP
+#  Maps friendly names → process names per OS.
+# ─────────────────────────────────────────────
+_IS_LINUX = platform.system().lower() == "linux"
+
+PROCESS_MAP_WINDOWS = {
     "calculator": ["CalculatorApp.exe", "calc.exe"],
     "notepad": ["notepad.exe"],
     "chrome": ["chrome.exe"],
@@ -16,9 +22,51 @@ PROCESS_MAP = {
     "camera": ["WindowsCamera.exe"]
 }
 
+PROCESS_MAP_LINUX = {
+    "calculator": ["gnome-calculator", "kcalc", "galculator"],
+    "notepad": ["gedit", "gnome-text-editor", "xed", "kate", "nano"],
+    "chrome": ["chrome", "chromium", "google-chrome"],
+    "google chrome": ["chrome", "chromium", "google-chrome"],
+    "vs code": ["code"],
+    "code": ["code"],
+    "spotify": ["spotify"],
+    "file manager": ["nautilus", "dolphin", "thunar", "nemo"],
+    "files": ["nautilus", "dolphin", "thunar", "nemo"],
+    "camera": ["cheese", "gnome-camera"],
+    "firefox": ["firefox"],
+    "terminal": ["gnome-terminal", "konsole", "xfce4-terminal"],
+}
+
+PROCESS_MAP = PROCESS_MAP_LINUX if _IS_LINUX else PROCESS_MAP_WINDOWS
+
+
+def _kill_process_linux(process_name: str) -> bool:
+    """Kill a process by name on Linux using pkill."""
+    try:
+        result = subprocess.run(
+            ["pkill", "-f", process_name],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return result.returncode == 0
+    except Exception as e:
+        print(f"[CLOSER] Error killing {process_name} on Linux: {e}")
+        return False
+
+
+def _kill_process_windows(process_name: str) -> bool:
+    """Kill a process by name on Windows using taskkill."""
+    try:
+        result = os.system(f"taskkill /F /IM {process_name} /T >nul 2>&1")
+        return result == 0
+    except Exception as e:
+        print(f"[CLOSER] Error killing {process_name} on Windows: {e}")
+        return False
+
+
 def close_app(app_name: str) -> tuple[bool, str]:
     """
-    Terminates an application by name.
+    Terminates an application by name. Cross-platform.
     """
     app_key = app_name.lower().strip()
     
@@ -27,24 +75,21 @@ def close_app(app_name: str) -> tuple[bool, str]:
         killed_any = False
         
         for process in targets:
-            try:
-                # /F = force, /IM = image name, /T = tree (kill childs)
-                # Redirect output to nul to avoid clutter
-                result = os.system(f"taskkill /F /IM {process} /T >nul 2>&1")
-                if result == 0:
+            if _IS_LINUX:
+                if _kill_process_linux(process):
                     killed_any = True
-            except Exception as e:
-                print(f"Error killing {process}: {e}")
+            else:
+                if _kill_process_windows(process):
+                    killed_any = True
 
         if killed_any:
             return True, f"Closing {app_key}."
         else:
-            # If we couldn't kill it, maybe it wasn't running.
-            # But strictly speaking, if command succeeded (0), it found and killed.
-            # If strictly 128 or other error, it might not be found.
-            # For UX, if we tried and didn't crash, we say closed or "not running".
-            # But let's assume if result != 0 it wasn't there.
-            return True, f"Closing {app_key}." # Optimistic confirmation
+            return True, f"Closing {app_key}."  # Optimistic confirmation
             
     else:
+        # Fallback: try killing by name directly
+        if _IS_LINUX:
+            if _kill_process_linux(app_key):
+                return True, f"Closing {app_key}."
         return False, f"I cannot close {app_key} because I don't know its process name."

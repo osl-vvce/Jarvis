@@ -6,25 +6,63 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import re
+import shutil
 from selenium.webdriver.support.wait import WebDriverWait
+
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except ImportError:
+    ChromeDriverManager = None
+
+
+def _create_headless_driver():
+    """Create a headless Chrome driver using cross-platform detection."""
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
+    # Auto-detect Chrome/Chromium binary
+    from NetHyTechSTT.listen import _find_chrome_binary
+    binary = _find_chrome_binary()
+    if binary:
+        chrome_options.binary_location = binary
+
+    # Try webdriver_manager first
+    if ChromeDriverManager:
+        try:
+            service = Service(ChromeDriverManager().install())
+            return webdriver.Chrome(service=service, options=chrome_options)
+        except Exception:
+            pass
+
+    # Try system chromedriver
+    chromedriver_path = shutil.which("chromedriver")
+    if chromedriver_path:
+        try:
+            service = Service(executable_path=chromedriver_path)
+            return webdriver.Chrome(service=service, options=chrome_options)
+        except Exception:
+            pass
+
+    # Final fallback
+    try:
+        return webdriver.Chrome(options=chrome_options)
+    except Exception as e:
+        print(f"[DEEP SEARCH] All WebDriver attempts failed: {e}")
+        return None
 
 
 def search_and_extract(text):
+    driver = _create_headless_driver()
+    if driver is None:
+        return "Deep search unavailable — Chrome/Chromium not found."
+
     try:
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-
-        # Set the path to your ChromeDriver executable
-        chrome_driver_path = r'C:\Users\chatu\OneDrive\Desktop\J.A.R.V.I.S\DATA\chromedriver.exe'
-
-        chrome_service = Service(chrome_driver_path)
-        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
         # Open Google in the browser
         driver.get("https://www.google.com")
         # Find the search box using its name attribute value
         search_box = driver.find_element("name", "q")
-
-
 
         # Type the search query
         search_query = text
@@ -54,32 +92,36 @@ def search_and_extract(text):
         # Extract text from the webpage, excluding script and style tags
         webpage_text = ' '.join([p.get_text() for p in soup.find_all('p')])
 
-        # Extract keywords or relevant information based on your specific requirements
-        # For example, you can use a keyword extraction library or manually define keywords
-
         # Extract and print the first 8-9 sentences from the webpage text
         sentences = re.split(r'(?<=[.!?])\s', webpage_text)
         result_text = '. '.join(sentences[:9])
         return result_text
 
-
     except Exception as e:
         print("An error occurred:", e)
+        return "I encountered an error during the search."
 
-    except Exception as e:
-        print("An error occurred:", e)
-
-    driver.quit()
-
-
+    finally:
+        try:
+            driver.quit()
+        except Exception:
+            pass
 
 
 #########################################
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lsa import LsaSummarizer
+try:
+    from sumy.parsers.plaintext import PlaintextParser
+    from sumy.nlp.tokenizers import Tokenizer
+    from sumy.summarizers.lsa import LsaSummarizer
+    SUMY_AVAILABLE = True
+except ImportError:
+    SUMY_AVAILABLE = False
 
 def summarize_text(text, sentences_count=5):
+    if not SUMY_AVAILABLE:
+        # Basic fallback: return first N sentences
+        sentences = re.split(r'(?<=[.!?])\s', text)
+        return '. '.join(sentences[:sentences_count])
     parser = PlaintextParser.from_string(text, Tokenizer("english"))
     summarizer = LsaSummarizer()
     summary = summarizer(parser.document, sentences_count)
@@ -94,5 +136,6 @@ def summary(text):
 def deep_search(text):
     x = text
     y = search_and_extract(x)
-    x = summary(y)
+    if y:
+        x = summary(y)
     return x

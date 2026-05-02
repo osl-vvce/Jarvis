@@ -1,23 +1,30 @@
-requests
-pyautogui
-pywhatkit
-psutil
-selenium
-webdriver_manager
-webscout
-lxml_html_clean
-gradio_client
+beautifulsoup4
 colorlog
-yaspin
-opencv-python
-pyaudio
-scipy
-pyttsx3
-pygame
+comtypes; sys_platform == 'win32'
+gradio_client
+lxml_html_clean
+nltk
+numpy
 openai
-python-dotenv
-winotify; sys_platform == "win32"
-wmi; sys_platform == "win32"
-comtypes; sys_platform == "win32"
-pycaw; sys_platform == "win32"
-pypiwin32; sys_platform == "win32"
+opencv-python
+pillow
+psutil==7.2.2
+pulsectl; sys_platform == 'linux'
+pyaudio==0.2.14
+pyautogui
+pycaw; sys_platform == 'win32'
+pygame
+pypiwin32; sys_platform == 'win32'
+PyQt5
+python-dotenv==1.2.2
+pyttsx3
+pywhatkit
+requests==2.33.1
+scipy
+selenium==4.43.0
+sumy
+webdriver-manager==4.0.2
+webscout
+winotify; sys_platform == 'win32'
+wmi; sys_platform == 'win32'
+yaspin

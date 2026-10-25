@@ -10,6 +10,7 @@ brain = JarvisBrain()
 from Tools.app_launcher import open_app
 from Tools.app_closer import close_app
 from Tools.screen_control import handle_screen_command
+from Tools.screen_intelligence import analyze_screen
 from Tools.camera_control import open_camera_interface, close_camera_interface, click_photo, start_recording, stop_recording
 from Tools.window_control import minimize_window, minimize_active_window, show_all_windows, open_start_menu
 from Tools.browser_control import search_youtube, search_google, open_youtube
@@ -30,16 +31,16 @@ def check_inputs():
         time.sleep(0.1)  # Small delay for reliable input processing
         with open("input.txt","r") as file:
             input_text = file.read().lower().strip()
-        
+
         if input_text != output_text and input_text:
             output_text = input_text
             print(f"[DEBUG] Raw input: {output_text}")
-            
+
             # ============================================
             # MUSIC COMMANDS (NO WAKE WORD REQUIRED)
             # These run BEFORE the wake word gate for seamless control
             # ============================================
-            
+
             # Play song: "play believer" or "play shape of you"
             if output_text.startswith("play "):
                 song_name = output_text.replace("play ", "").strip()
@@ -48,35 +49,35 @@ def check_inputs():
                     if success:
                         jarvis_speak(msg, mood="success")
                 continue
-            
+
             # Stop music: "stop" or "stop song" or "stop the song"
             if output_text in ["stop", "stop song", "stop the song", "stop music", "stop the music"]:
                 success, msg = pause_music()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # Resume: "resume" or "continue music"
             if output_text in ["resume", "continue", "continue music", "resume music"]:
                 success, msg = resume_music()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # Volume up: "increase volume" or "volume up"
             if output_text in ["increase volume", "volume up", "louder", "increase the volume"]:
                 success, msg = increase_volume()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # Volume down: "decrease volume" or "lower volume"
             if output_text in ["decrease volume", "lower volume", "volume down", "lower the volume", "decrease the volume"]:
                 success, msg = decrease_volume()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # Search: "search believer"
             if output_text.startswith("search "):
                 song_name = output_text.replace("search ", "").strip()
@@ -85,45 +86,45 @@ def check_inputs():
                     if success:
                         jarvis_speak(msg, mood="success")
                 continue
-            
+
             # Next/Previous (no wake word)
             if output_text in ["next", "next song", "skip"]:
                 success, msg = next_track()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if output_text in ["previous", "previous song", "go back"]:
                 success, msg = previous_track()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # NOTES MODE (NO WAKE WORD)
             # ============================================
             if is_notes_mode():
                 type_text(output_text)
                 continue
-            
+
             # ============================================
             # WAKE WORD GATE (FOR OTHER COMMANDS)
             # ============================================
             if not output_text.startswith(WAKE_WORD):
                 print(f"[DEBUG] No wake word, ignoring.")
                 continue
-            
+
             # Strip wake word
             cmd = output_text.replace(WAKE_WORD, "", 1).strip()
             print(f"[DEBUG] Command after stripping wake word: {cmd}")
-            
+
             # ============================================
             # PRIORITY 1: EXIT
             # ============================================
             if cmd in ["exit", "stop", "quit", "terminate", "shutdown"]:
                 jarvis_speak("Shutting down.", mood="neutral")
                 break
-            
+
             # ============================================
             # PRIORITY 2: NOTES MODE TOGGLE
             # ============================================
@@ -133,12 +134,12 @@ def check_inputs():
                     start_notes()
                     jarvis_speak("Notes mode started.", mood="success")
                 continue
-            
+
             if cmd in ["stop taking notes", "stop notes"]:
                 stop_notes()
                 jarvis_speak("Notes mode stopped.", mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 3: CLOSE APP
             # ============================================
@@ -147,7 +148,7 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd.startswith("close "):
                 app_name = cmd.replace("close ", "").strip()
                 if "window" not in app_name:
@@ -155,7 +156,7 @@ def check_inputs():
                     if success:
                         jarvis_speak(msg, mood="success")
                     continue
-            
+
             # ============================================
             # PRIORITY 4: MINIMIZE
             # ============================================
@@ -164,14 +165,14 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd.startswith("minimize "):
                 app_name = cmd.replace("minimize ", "").strip()
                 success, msg = minimize_window(app_name)
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 5: OPEN APP
             # ============================================
@@ -180,26 +181,26 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd in ["open start menu", "start menu"]:
                 success, msg = open_start_menu()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd in ["open youtube", "youtube"]:
                 success, msg = open_youtube()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd.startswith("open "):
                 app_name = cmd.replace("open ", "").strip()
                 success, msg = open_app(app_name)
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 6: SYSTEM CONTROLS
             # ============================================
@@ -208,7 +209,7 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 7: BROWSER SEARCH
             # ============================================
@@ -218,14 +219,14 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd.startswith("search google for "):
                 query = cmd.replace("search google for ", "").strip()
                 success, msg = search_google(query)
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 8: SPOTIFY (WAKE WORD REQUIRED)
             # ============================================
@@ -234,7 +235,7 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd.startswith("play album "):
                 album_name = cmd.replace("play album ", "").strip()
                 if album_name:
@@ -242,7 +243,7 @@ def check_inputs():
                     if success:
                         jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 9: CAMERA ACTIONS
             # ============================================
@@ -253,19 +254,19 @@ def check_inputs():
                     continue
                 elif cmd != "click":
                     continue  # Silent for camera-specific commands
-            
+
             if cmd in ["start recording", "record video"]:
                 success, msg = start_recording()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd in ["stop recording", "stop video"]:
                 success, msg = stop_recording()
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 9: SCREEN CONTROL
             # ============================================
@@ -273,7 +274,7 @@ def check_inputs():
             if success:
                 jarvis_speak(msg, mood="success")
                 continue
-            
+
             # ============================================
             # PRIORITY 10: CLIPBOARD
             # ============================================
@@ -282,7 +283,7 @@ def check_inputs():
                 if success:
                     jarvis_speak(msg, mood="success")
                 continue
-            
+
             if cmd in ["paste", "paste this"]:
                 success, msg = paste()
                 if success:
@@ -308,6 +309,17 @@ def check_inputs():
                 data    = clf_result["data"]
 
                 print(f"[DEBUG] Classifier hit: intent='{intent}' action='{action}'")
+
+                # ── Screen intelligence: analyze the desktop only on request ──
+                if intent == "screen_question":
+                    question = data.get("question", cmd)
+                    jarvis_speak("Analyzing your screen now, sir.", mood="neutral")
+                    success, answer = analyze_screen(question)
+                    jarvis_speak(
+                        answer,
+                        mood="success" if success else "neutral"
+                    )
+                    continue
 
                 # ── Route classifier intents to existing tool functions ──
 
@@ -360,8 +372,12 @@ def check_inputs():
                     jarvis_speak(result["message"], mood="success")
 
                 elif intent == "screenshot":
-                    success, msg = click_photo()   # reuse camera capture
-                    jarvis_speak(msg if success else message, mood="success" if success else "neutral")
+                    # Capture the desktop, not the webcam.
+                    success, msg = handle_screen_command("screenshot")
+                    jarvis_speak(
+                        msg,
+                        mood="success" if success else "neutral",
+                )
 
                 elif intent == "weather":
                     # Delegate to automation brain which handles weather

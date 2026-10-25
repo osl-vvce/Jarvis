@@ -30,6 +30,28 @@ from typing import Optional
 
 INTENT_PATTERNS: dict[str, list[tuple]] = {
 
+    # ── screen_question ──────────────────────────────────────────────
+    "screen_question": [
+        (
+            re.compile(
+                r"^(?P<question>(?:please\s+)?(?:explain|read|summari[sz]e|describe|analy[sz]e|understand)\s+.+\b(?:screen|display|window|page|document|code|error|image|text)\b.*)$",
+                re.I
+            ),
+            "analyze_screen",
+            "I'll analyze what's on your screen, sir."
+        ),
+        (
+            re.compile(
+                r"^(?P<question>(?:what(?:'s|\s+is)\s+)?(?:on|shown\s+on|visible\s+on)\s+(?:my\s+)?(?:screen|display)\??)$",
+                re.I
+            ),
+            "analyze_screen",
+            "I'll analyze what's on your screen, sir."
+        ),
+    ],
+
+
+
     # ── open_app ─────────────────────────────────────────────────────
     # Matches: "open chrome", "launch spotify", "start notepad"
     "open_app": [

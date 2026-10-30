@@ -62,19 +62,21 @@ Jarvis/
 - Windows 10/11
 - Microphone for voice input
 
-### Installation
+## Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/abhilashg-cell/Jarvis-0.1.git
-cd Jarvis-0.1
+```powershell
+# Clone the official repository
+git clone https://github.com/osl-vvce/Jarvis.git
+cd Jarvis
 
-# Create virtual environment
+# Create a virtual environment
 python -m venv .venv
-.venv\Scripts\activate
+
+# Activate the virtual environment (Windows PowerShell)
+.\.venv\Scripts\Activate.ps1
 
 # Install dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### Configuration

@@ -100,3 +100,6 @@ dist/
 # ===========================
 .sixth/
 Jravis/
+
+# Pytest
+.pytest_cache/
